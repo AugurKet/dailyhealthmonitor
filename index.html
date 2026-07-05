@@ -1,0 +1,248 @@
+import React, { useState, useEffect } from 'react';
+import { Info, Award, Flame, Shield, Activity, Check, X, Calendar } from 'lucide-react';
+
+const QUESTIONS = [
+  { 
+    id: 'q1', 
+    type: 'positive', 
+    label: '30 Mins Intentional Exercise', 
+    pts: 25, 
+    tip: 'Cardio or strength training where your heart rate is elevated. E.g., brisk walking, running, swimming, or cycling.' 
+  },
+  { 
+    id: 'q2', 
+    type: 'positive', 
+    label: '2+ Servings of Vegetables', 
+    pts: 25, 
+    tip: 'One serving is about 1 cup of raw leafy greens or 1/2 cup of cooked vegetables.' 
+  },
+  { 
+    id: 'q3', 
+    type: 'positive', 
+    label: '7+ Hours of Restful Sleep', 
+    pts: 25, 
+    tip: 'Uninterrupted sleep. If you woke up tired, it might not count as restful!' 
+  },
+  { 
+    id: 'q4', 
+    type: 'positive', 
+    label: 'Took Meds & Supplements', 
+    pts: 25, 
+    tip: 'Any doctor-prescribed medication or daily essential vitamins.' 
+  },
+  { 
+    id: 'q5', 
+    type: 'negative', 
+    label: 'Ate Fast Food / High Sodium', 
+    pts: -30, 
+    tip: 'Meals with over 800mg of sodium, highly processed meats, or heavy fast food.' 
+  },
+  { 
+    id: 'q6', 
+    type: 'negative', 
+    label: 'Smoked or Heavy Alcohol', 
+    pts: -40, 
+    tip: 'Smoking any tobacco/vape, or consuming more than 2 alcoholic beverages.' 
+  }
+];
+
+const BADGES = [
+  { days: 7, name: 'Bronze Shield', icon: Shield, color: 'text-amber-600', bg: 'bg-amber-100' },
+  { days: 14, name: 'Silver Sword', icon: Activity, color: 'text-slate-500', bg: 'bg-slate-200' },
+  { days: 30, name: 'Gold Crown', icon: Award, color: 'text-yellow-500', bg: 'bg-yellow-100' }
+];
+
+export default function App() {
+  const [dailyInputs, setDailyInputs] = useState({});
+  const [score, setScore] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [dayCount, setDayCount] = useState(1);
+  const [activeTooltip, setActiveTooltip] = useState(null);
+
+  // Calculate score whenever inputs change
+  useEffect(() => {
+    let currentScore = 0;
+    QUESTIONS.forEach(q => {
+      if (dailyInputs[q.id]) {
+        currentScore += q.pts;
+      }
+    });
+    // Bound the score between 0 and 100
+    setScore(Math.max(0, Math.min(100, currentScore)));
+  }, [dailyInputs]);
+
+  const toggleInput = (id) => {
+    setDailyInputs(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const submitDay = () => {
+    if (score >= 60) {
+      setStreak(prev => prev + 1);
+    } else {
+      setStreak(0);
+    }
+    
+    // Reset for next day simulation
+    setDailyInputs({});
+    setDayCount(prev => prev + 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const scoreColor = score >= 60 ? 'text-emerald-500' : 'text-slate-400';
+  const progressColor = score >= 60 ? 'bg-emerald-500' : 'bg-slate-300';
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-20">
+      
+      {/* Tooltip Overlay - closes tooltip when clicking outside */}
+      {activeTooltip && (
+        <div 
+          className="fixed inset-0 z-40"
+          onClick={() => setActiveTooltip(null)}
+        />
+      )}
+
+      {/* Header & Dashboard */}
+      <div className="bg-white px-6 pt-10 pb-8 rounded-b-[2.5rem] shadow-sm mb-6">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Health Monitor</h1>
+            <p className="text-slate-500 text-sm flex items-center gap-1 mt-1">
+              <Calendar className="w-4 h-4" /> Day {dayCount}
+            </p>
+          </div>
+          <div className="flex flex-col items-end">
+            <div className="flex items-center gap-1 text-orange-500 bg-orange-50 px-3 py-1 rounded-full">
+              <Flame className="w-5 h-5 fill-current" />
+              <span className="font-bold">{streak} Days</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Score Ring / Display */}
+        <div className="flex flex-col items-center justify-center py-4">
+          <div className="relative w-40 h-40 flex items-center justify-center">
+            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+              {/* Background circle */}
+              <circle cx="50" cy="50" r="45" fill="none" stroke="#f1f5f9" strokeWidth="8" />
+              {/* Progress circle */}
+              <circle 
+                cx="50" cy="50" r="45" fill="none" 
+                stroke={score >= 60 ? '#10b981' : '#cbd5e1'} 
+                strokeWidth="8" 
+                strokeDasharray={`${(score / 100) * 283} 283`}
+                className="transition-all duration-500 ease-out"
+              />
+            </svg>
+            <div className="absolute flex flex-col items-center">
+              <span className={`text-4xl font-black transition-colors ${scoreColor}`}>
+                {score}
+              </span>
+              <span className="text-xs font-medium text-slate-400 uppercase tracking-wider mt-1">
+                Score
+              </span>
+            </div>
+          </div>
+          
+          <p className="mt-4 text-sm text-slate-500 font-medium">
+            {score >= 60 
+              ? "Great job! You are on track today." 
+              : "Reach 60 points to keep your streak alive."}
+          </p>
+        </div>
+      </div>
+
+      {/* Badges Section */}
+      <div className="px-6 mb-8">
+        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Milestones</h2>
+        <div className="flex gap-4 overflow-x-auto pb-2 -mx-6 px-6 snap-x">
+          {BADGES.map((badge) => {
+            const unlocked = streak >= badge.days;
+            const Icon = badge.icon;
+            return (
+              <div 
+                key={badge.days}
+                className={`snap-center shrink-0 w-28 h-32 rounded-2xl flex flex-col items-center justify-center p-3 border-2 transition-all ${
+                  unlocked 
+                    ? `border-transparent ${badge.bg}` 
+                    : 'border-dashed border-slate-200 bg-white/50 opacity-60'
+                }`}
+              >
+                <Icon className={`w-8 h-8 mb-2 ${unlocked ? badge.color : 'text-slate-300'}`} />
+                <span className={`text-xs font-bold text-center ${unlocked ? 'text-slate-800' : 'text-slate-400'}`}>
+                  {badge.name}
+                </span>
+                <span className={`text-[10px] mt-1 ${unlocked ? 'text-slate-600' : 'text-slate-400'}`}>
+                  {badge.days} Days
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Daily Checklist */}
+      <div className="px-6 space-y-4">
+        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Daily Log</h2>
+        
+        {QUESTIONS.map((q) => {
+          const isActive = !!dailyInputs[q.id];
+          const isPositive = q.type === 'positive';
+          
+          return (
+            <div key={q.id} className="relative bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center justify-between">
+              
+              <div className="flex items-center gap-3 pr-4">
+                <button 
+                  onClick={() => setActiveTooltip(activeTooltip === q.id ? null : q.id)}
+                  className="p-1 rounded-full bg-slate-100 text-slate-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                >
+                  <Info className="w-5 h-5" />
+                </button>
+                <span className={`font-medium text-sm ${isActive && !isPositive ? 'text-red-500' : 'text-slate-700'}`}>
+                  {q.label}
+                </span>
+              </div>
+
+              {/* Custom Toggle Switch */}
+              <button
+                onClick={() => toggleInput(q.id)}
+                className={`relative w-14 h-8 rounded-full transition-colors duration-300 flex items-center px-1 shrink-0 ${
+                  isActive 
+                    ? (isPositive ? 'bg-emerald-500' : 'bg-red-500') 
+                    : 'bg-slate-200'
+                }`}
+              >
+                <div className={`w-6 h-6 bg-white rounded-full shadow-sm transform transition-transform duration-300 flex items-center justify-center ${
+                  isActive ? 'translate-x-6' : 'translate-x-0'
+                }`}>
+                  {isActive && isPositive && <Check className="w-4 h-4 text-emerald-500" />}
+                  {isActive && !isPositive && <X className="w-4 h-4 text-red-500" />}
+                </div>
+              </button>
+
+              {/* Floating Tooltip */}
+              {activeTooltip === q.id && (
+                <div className="absolute z-50 top-full left-0 mt-2 w-64 bg-slate-800 text-white text-xs p-3 rounded-xl shadow-xl">
+                  <div className="absolute -top-2 left-5 w-4 h-4 bg-slate-800 transform rotate-45"></div>
+                  <p className="relative z-10">{q.tip}</p>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Bottom Action Bar */}
+      <div className="fixed bottom-0 left-0 w-full p-6 bg-gradient-to-t from-slate-50 via-slate-50 to-transparent">
+        <button 
+          onClick={submitDay}
+          className="w-full bg-slate-900 text-white font-bold text-lg py-4 rounded-2xl shadow-lg hover:bg-slate-800 transition-transform active:scale-95"
+        >
+          Simulate Next Day
+        </button>
+      </div>
+
+    </div>
+  );
+}
